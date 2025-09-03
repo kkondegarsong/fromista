@@ -1,5 +1,7 @@
 const { Command } = require('commander');
 const login = require('./login');
+const download = require('./download.js');
+const check = require('./check-newest.js');
 
 const program = new Command();
 
@@ -8,6 +10,7 @@ program
     .description('fromis_9 instagram download tool')
     .version('1.0.0');
 
+// 로그인
 program
     .command('login')
     .description('instagram login')
@@ -22,13 +25,26 @@ program
 
 // 계정 이름을 argument로 받기
 program
-    .option('-m, --member <member>', 'account who want download')
+    .option('-u, --user <member>', 'account who want download')
     .option('-a, --all', 'download all accounts')
     .action(async (options) => {
         if (options.all) {
             console.log('please login to instagram');
-        } else if (options.member) {
-            console.log(options);
+        } else if (options.user) {
+            const contents = await check(options.user);
+            if (contents.error) {
+                if (contents.error === 'login_required') {
+                    console.log('please login to instagram');
+                    return;
+                }
+
+                console.log('can not get content urls: ', contents.message);
+                return;
+            }
+
+            for (const url of contents) {
+                await download(url);
+            }
         } else {
             console.log('please write argument');
         }

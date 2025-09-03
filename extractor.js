@@ -1,6 +1,7 @@
 
 const { chromium } = require('playwright');
 const extractScript = require('./extract-script.js');
+const config = require('./config.js');
 const userDataDir = "./userdata"; // 세션 저장할 폴더
 
 class Extractor {
@@ -8,8 +9,8 @@ class Extractor {
         this.options = {
             headless: true,
             timeout: 30000,
-            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            cookieFile: './browser-cookies.json',
+            userAgent: config.browser.userAgent,
+            cookieFile: config.storage.cookies,
             ...options
         };
     }
@@ -20,68 +21,19 @@ class Extractor {
             headless: this.options.headless,
             userAgent: this.options.userAgent,
             viewport: { width: 1920, height: 1080 },
-            locale: 'ko-KR',
-            timezoneId: 'Asia/Seoul'
+            locale: config.browser.locale,
+            timezoneId: config.browser.timezoneId
         });
 
 
         try {            
-            console.log(`Instagram 페이지로 이동: ${linkUrl}`);
             await this.loadCookies(browser);      
             const result = await this.runScript(browser, linkUrl);
 
             // 결과 검증 및 후처리
             if (result.error) {
-                if (result.error === 'login_required') {
-                    while (true) {
-                        const login = await chromium.launch({ 
-                            headless: false
-                        });
-                        
-                        const loginContext = await login.newContext({
-                            userAgent: this.options.userAgent,
-                            viewport: { width: 720, height: 720 },
-                            locale: 'ko-KR',
-                            timezoneId: 'Asia/Seoul'
-                        });
-                        const loginPage = await loginContext.newPage();
-                        await loginPage.goto('https://www.instagram.com/accounts/login/', { 
-                            waitUntil: 'domcontentloaded',
-                            timeout: this.options.timeout
-                        });
-
-                        const input = await question(
-                            "로그인이 필요합니다. 로그인 후 continue를 입력하여 계속 진행해주세요. (or stop): "
-                        );
-
-                        if (input === "continue") {
-                            const cookies = await loginContext.cookies();
-                            await fs.writeFile(this.options.cookieFile, JSON.stringify(cookies, null, 2));
-
-                            await loginContext.close();
-                            await login.close();
-
-                            const instagram = await chromium.launchPersistentContext(userDataDir, { 
-                                headless: this.options.headless,
-                                userAgent: this.options.userAgent,
-                                viewport: { width: 1920, height: 1080 },
-                                locale: 'ko-KR',
-                                timezoneId: 'Asia/Seoul'
-                            });
-
-                            await instagram.addCookies(cookies);                             
-                            return this.runScript(instagram, linkUrl);
-                        } else if (input === "stop") {
-                            await browser.close();
-                            return { error: "stopped", message: "사용자 중단" };
-                        } else {
-                            console.log("잘못된 입력입니다. 다시 입력해주세요.");
-                        }
-                    }
-                } else {
-                    console.error('추출 오류:', result);
-                    return result;
-                }                
+                console.error('추출 오류:', result.message);
+                return result;              
             }
             
             // 성공적인 결과 로깅        
