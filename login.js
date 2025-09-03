@@ -43,6 +43,12 @@ async function login() {
             }
         }
     });
+    page.on('close', async () => {
+        console.log('PAGE IS CLOSED!');
+
+        await context.close();
+        await browser.close();
+    });
 
     page.goto('https://www.instagram.com/accounts/login/');
 }
