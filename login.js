@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
-const cookieFile = './browser-cookies.json';
+const config = require('./config.js');
 
 const loginCheck = () => {
     const h = document.documentElement.innerHTML;    
@@ -15,14 +15,14 @@ const loginCheck = () => {
 async function login() {
     const browser = await chromium.launch({ 
         headless: false,
-        args: ['--no-blink-features=AutomationControlled']
+        args: config.browser.args
     });
 
     const context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        userAgent: config.browser.userAgent,
         viewport: { width: 720, height: 720 },
-        locale: 'ko-KR',
-        timezoneId: 'Asia/Seoul'
+        locale: config.browser.locale,
+        timezoneId: config.browser.timezoneId
     });
 
     const page = await context.newPage();
@@ -30,13 +30,15 @@ async function login() {
         const pageUrl = page.url();
 
         console.log(`PAGE LOAD COMPLETE: ${pageUrl}`);
-        if (pageUrl.startsWith('https://www.instagram.com/')) {
+        if (pageUrl.startsWith(config.url.baseUrl)) {
             const loggedin = await page.evaluate(loginCheck);
             if (loggedin) {
                 // 쿠키 저장 및 브라우저 종료.
                 console.log('LOGIN COMPLETE!');
                 const cookies = await context.cookies();
-                await fs.writeFile(cookieFile, JSON.stringify(cookies, null, 2));
+
+                await fs.mkdir(config.storage.browser, { recursive: true });
+                await fs.writeFile(config.storage.cookies, JSON.stringify(cookies, null, 2));
 
                 await context.close();
                 await browser.close();
@@ -50,7 +52,7 @@ async function login() {
         await browser.close();
     });
 
-    page.goto('https://www.instagram.com/accounts/login/');
+    page.goto(config.url.login);
 }
 
 module.exports = login;
