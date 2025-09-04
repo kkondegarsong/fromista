@@ -1,15 +1,16 @@
 const { chromium } = require('playwright');
 const storage = require('./url-storage.js');
 const extractor = require('./extractor.js');
-const config = require('./config.js');
+const configure = require('./config.js');
 
 const fs = require('fs').promises;
 const path = require('path');
 const https = require('https');
 
-function showProgress(current, total, message = 'downloading') {
+function showProgress(current, total, message = 'Downloading') {
     const percentage = Math.round((current / total) * 100);
-    const progressBar = '█'.repeat(Math.floor(percentage / 2)) + '░'.repeat(50 - Math.floor(percentage / 2));
+    const floored = Math.floor(percentage / 2);
+    const progressBar = '█'.repeat(floored) + '░'.repeat(50 - floored);
     
     process.stdout.write(`\r${message}... [${progressBar}] ${percentage}%`);
 }
@@ -38,10 +39,10 @@ async function download(linkUrl) {
     };
     
     try {
+        const config = await configure.load();
         const result = await extractor.extract(linkUrl);
 
         if (result.error) {
-            console.log('❌ 추출 실패:', result.message);
             return;
         }
 
@@ -78,7 +79,7 @@ async function download(linkUrl) {
             }
         }
 
-        console.log('\n✅ download compelete!');
+        console.log('\n✅ download complete!');
     } catch (error) {
         console.error('오류 발생:', error);
     }

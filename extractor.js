@@ -1,28 +1,29 @@
 
 const { chromium } = require('playwright');
 const extractScript = require('./extract-script.js');
-const config = require('./config.js');
+const configure = require('./config.js');
 const userDataDir = "./userdata"; // 세션 저장할 폴더
+const fs = require('fs').promises;
 
 class Extractor {
     constructor(options = {}) {
         this.options = {
             headless: true,
             timeout: 30000,
-            userAgent: config.browser.userAgent,
-            cookieFile: config.storage.cookies,
             ...options
         };
     }
 
 
     async extract(linkUrl) {
+        const config = await configure.load();
         const browser = await chromium.launchPersistentContext(userDataDir, { 
             headless: this.options.headless,
-            userAgent: this.options.userAgent,
+            userAgent: config.browser.userAgent,
             viewport: { width: 1920, height: 1080 },
             locale: config.browser.locale,
-            timezoneId: config.browser.timezoneId
+            timezoneId: config.browser.timezoneId,
+            args: config.browser.args
         });
 
 
@@ -84,14 +85,14 @@ class Extractor {
     }
 
     async loadCookies(browser) {
-        const fs = require('fs').promises;
+        const config = await configure.load();
+
         try {
-            const cookieData = await fs.readFile(this.options.cookieFile, 'utf8');
+            const cookieData = await fs.readFile(config.storage.cookies, 'utf8');
             const cookies = JSON.parse(cookieData);
             await browser.addCookies(cookies);
-            console.log("저장된 쿠키를 로드했습니다.");
         } catch (error) {
-            console.log("저장된 쿠키가 없습니다.");
+            console.log("[extractor] 저장된 쿠키가 없습니다.");
         }
     }
 }

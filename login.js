@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs').promises;
 const path = require('path');
-const config = require('./config.js');
+const configure = require('./config.js');
 
 const loginCheck = () => {
     const h = document.documentElement.innerHTML;    
@@ -13,6 +13,8 @@ const loginCheck = () => {
     return true;
 }
 async function login() {
+    const config = await configure.load();
+
     const browser = await chromium.launch({ 
         headless: false,
         args: config.browser.args

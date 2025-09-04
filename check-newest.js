@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 const storage = require('./url-storage.js');
-const config = require('./config.js');
+const configure = require('./config.js');
 const fs = require('fs').promises;
 
 const loginCheck = () => {
@@ -15,17 +15,19 @@ const loginCheck = () => {
 
 
 async function loadCookies(browser) {
+    const config = await configure.load();
+    
     try {
         const cookieData = await fs.readFile(config.storage.cookies, 'utf8');
         const cookies = JSON.parse(cookieData);
         await browser.addCookies(cookies);
-        console.log("저장된 쿠키를 로드했습니다.");
     } catch (error) {
-        console.log("저장된 쿠키가 없습니다.");
+        console.log("[check-update] 저장된 쿠키가 없습니다.");
     }
 }
 
 async function getUrls(user) {
+    const config = await configure.load();
     const browser = await chromium.launch({ 
         headless: true,
         args: config.browser.args

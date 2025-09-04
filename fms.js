@@ -2,6 +2,7 @@ const { Command } = require('commander');
 const login = require('./login');
 const download = require('./download.js');
 const check = require('./check-newest.js');
+const configure = require('./config.js');
 
 const program = new Command();
 
@@ -27,7 +28,12 @@ program
 program
     .option('-u, --user <member>', 'account who want download')
     .option('-a, --all', 'download all accounts')
+    .option('-o, --output <path>', 'set downloads path')
     .action(async (options) => {
+        if (options.output) {
+            await configure.setOutput(options.output);
+        } 
+
         if (options.all) {
             console.log('please login to instagram');
         } else if (options.user) {

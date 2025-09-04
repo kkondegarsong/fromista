@@ -134,7 +134,7 @@ function script() {
         }
         
         if (!j) {
-            return { error: 'parse_failed', message: 'Instagram 데이터 파싱 실패' };
+            return { error: 'parse_failed', message: 'instagram 데이터 파싱 실패' };
         }
         
         let out = { count: 0 };
@@ -223,7 +223,6 @@ function script() {
         
         console.log("[script] 완료");
         return out;
-        
     } catch (error) {
         return {
             error: 'script_error',
