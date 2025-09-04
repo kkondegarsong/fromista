@@ -1,5 +1,5 @@
 const { Command } = require('commander');
-const login = require('./login');
+const login = require('./login.js');
 const download = require('./download.js');
 const check = require('./check-newest.js');
 const configure = require('./config.js');
