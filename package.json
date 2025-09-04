@@ -4,7 +4,7 @@
     "playwright": "^1.55.0",
     "puppeteer": "^24.18.0"
   },
-  "name": "web-crawling",
+  "name": "fromista",
   "version": "1.0.0",
   "main": "frm.js",
   "bin": {

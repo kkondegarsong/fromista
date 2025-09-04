@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const { Command } = require('commander');
 const login = require('./login.js');
 const download = require('./download.js');
