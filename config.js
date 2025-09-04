@@ -3,6 +3,10 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs').promises;
 
+// 전역 상수들
+const HOME_DIR = os.homedir();
+const BASE_DIR = path.join(HOME_DIR, '.fromista');
+
 const defaultConfig = {
     browser: {
         args:  ['--no-blink-features=AutomationControlled'],
@@ -11,9 +15,9 @@ const defaultConfig = {
         timezoneId: 'Asia/Seoul'
     },
     storage: {
-        cookies: './browser-profiles/instgram-cookies.json',
-        downloads: './downloads',
-        browser: './browser-profiles'
+        downloads: path.join(BASE_DIR, 'downloads'),
+        browser: path.join(BASE_DIR, 'browser-profiles'),
+        cookies: path.join(BASE_DIR, 'browser-profiles', 'instagram-cookies.json')
     },
     url: {
         login: 'https://www.instagram.com/accounts/login/',
@@ -23,12 +27,11 @@ const defaultConfig = {
 
 class Configure {
     constructor() {
-        this.dir = path.join(os.homedir(), '.fromista');
-        this.file = path.join(this.dir, 'config.json');
+        this.file = path.join(BASE_DIR, 'config.json');
     }
 
     async mkdir() {
-        await fs.mkdir(this.dir, { recursive: true });
+        await fs.mkdir(BASE_DIR, { recursive: true });
     }
     async load() {
         try {
@@ -62,6 +65,15 @@ class Configure {
             await this.write(update);
         }
 
+    }
+    async clear() {
+        try {
+            await fs.unlink(this.file);
+            await fs.rm(defaultConfig.storage.browser, { recursive: true, force: true });
+            console.log('configure initialized.');
+        } catch (error) {
+            // 파일이 존재하지 않으면 무시.
+        }
     }
 
     merge(base, user) {

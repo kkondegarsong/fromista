@@ -14,12 +14,10 @@ const loginCheck = () => {
 }
 async function login() {
     const config = await configure.load();
-
     const browser = await chromium.launch({ 
         headless: false,
         args: config.browser.args
     });
-
     const context = await browser.newContext({
         userAgent: config.browser.userAgent,
         viewport: { width: 720, height: 720 },

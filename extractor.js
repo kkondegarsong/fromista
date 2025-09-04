@@ -2,7 +2,6 @@
 const { chromium } = require('playwright');
 const extractScript = require('./extract-script.js');
 const configure = require('./config.js');
-const userDataDir = "./userdata"; // 세션 저장할 폴더
 const fs = require('fs').promises;
 
 class Extractor {
@@ -16,8 +15,8 @@ class Extractor {
 
 
     async extract(linkUrl) {
-        const config = await configure.load();
-        const browser = await chromium.launchPersistentContext(userDataDir, { 
+        const config = await configure.load();        
+        const browser = await chromium.launchPersistentContext(config.storage.browser, { 
             headless: this.options.headless,
             userAgent: config.browser.userAgent,
             viewport: { width: 1920, height: 1080 },
@@ -66,7 +65,7 @@ class Extractor {
                 window.cpu = 100;
             });
             
-            console.log('Instagram 미디어 추출 스크립트 실행 중...');
+            console.log('extracting media files...');
             // 외부 스크립트 실행
             const result = await page.evaluate(extractScript);
             return result;            

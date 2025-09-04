@@ -3,6 +3,7 @@ const login = require('./login');
 const download = require('./download.js');
 const check = require('./check-newest.js');
 const configure = require('./config.js');
+const storage = require('./url-storage.js');
 
 const program = new Command();
 
@@ -26,13 +27,19 @@ program
 
 // 계정 이름을 argument로 받기
 program
-    .option('-u, --user <member>', 'account who want download')
-    .option('-a, --all', 'download all accounts')
-    .option('-o, --output <path>', 'set downloads path')
+    .option('-u, --user <member>', 'account who want download.')
+    .option('-a, --all', 'download all accounts.')
+    .option('-o, --output <path>', 'set downloads path.')
+    .option('-c, --clear', 'reset all caches and settings.')
     .action(async (options) => {
+        if (options.clear) {
+            await configure.clear();
+            await storage.clear();
+        }
+
         if (options.output) {
             await configure.setOutput(options.output);
-        } 
+        }
 
         if (options.all) {
             console.log('please login to instagram');
@@ -51,8 +58,6 @@ program
             for (const url of contents) {
                 await download(url);
             }
-        } else {
-            console.log('please write argument');
         }
     });
 

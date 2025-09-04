@@ -69,7 +69,7 @@ async function download(linkUrl) {
                 const filepath = path.join(config.storage.downloads, filename);
                 
                 await downloadFile(urlString, filepath);
-                await storage.saveUrl(linkUrl);
+                await storage.save(linkUrl);
                 
                 showProgress(i+1, result.urls.length);
                 // 다운로드 간격
