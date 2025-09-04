@@ -5,17 +5,17 @@
     "puppeteer": "^24.18.0"
   },
   "name": "fromista",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "frm.js",
   "bin": {
-      "frm": "frm.js"
+    "frm": "frm.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
-      "type": "git",
-      "url": "https://github.com/kkondegarsong/fromista.git"
+    "type": "git",
+    "url": "https://github.com/kkondegarsong/fromista.git"
   },
   "keywords": [],
   "author": "",
