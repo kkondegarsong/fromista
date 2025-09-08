@@ -45,7 +45,7 @@ async function getUrls(user) {
         // User-Agent 설정 (봇 차단 방지)
         await page.goto(`https://www.instagram.com/${user}/`);
         // 패턴에 해당하는 요소가 나타날 때까지 대기
-        const pattern = `a[href*="/${user}/p/"]`
+        const pattern = `a[href*="/${user}/"]`
         await page.waitForSelector(pattern, { timeout: 10000 });
     
         const loggedin = await page.evaluate(loginCheck);
@@ -54,15 +54,20 @@ async function getUrls(user) {
         }
 
         // 각 요소의 실제 내용 추출
-        const elementContents = await page.evaluate((_pattern) => {
+        const elementContents = await page.evaluate((_user) => {
+            const _pattern = `a[href*="/${_user}/"]`;
             const links = document.querySelectorAll(_pattern);
-            return Array.from(links).map((link, index) => (
-                {
-                    index: index + 1,
-                    href: link.href
-                }
-            ));
-        }, pattern);
+            const regex = new RegExp(`${_user}/(p|tv|reel)/([A-Za-z0-9_-]+)/`);
+
+            return Array.from(links)
+                .filter(link => regex.test(link.href))
+                .map((link, index) => (
+                    {
+                        index: index + 1,
+                        href: link.href
+                    }
+                ));
+        }, user);
 
         let urls = [];
         for (const item of elementContents) {
