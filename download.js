@@ -65,7 +65,7 @@ async function download(linkUrl) {
                 const url = new URL(urlString);
                 const basename = path.basename(url.pathname);
 
-                const filename = `${result.user}_${basename}.${ext}`;
+                const filename = `${result.user}_${result.baseDate}_${i+1}.${ext}`;
                 const filepath = path.join(config.storage.downloads, filename);
                 
                 await downloadFile(urlString, filepath);

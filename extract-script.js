@@ -56,6 +56,12 @@ function script() {
         // 유틸리티 함수들
         const localDate = d => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().replace(/\....Z|:/g, '');
         const touchDate = s => s.slice(0,4) + s.slice(5,7) + s.slice(8,10) + s.slice(11,15) + '.' + s.slice(15);
+
+        // 2025-09-05T05:00:11.000Z
+        // 1단계: /[-:]/g로 - 와 : 를 _ 로 바꿈 → 2025_09_05T05_00_11.000Z
+        // 2단계: T를 __로 바꿈 → 2025_09_05__05_00_11.000Z
+        // 3단계: 000Z 부분 제거 → 2025_09_05__05_00_11
+        const timestamp = d => new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().replace(/[-:]/g, '_').replace('T', '__').slice(0, 19);
         
         // 최고 품질 이미지 선택
         const bestImage = (j, reels = false) => {
@@ -193,12 +199,14 @@ function script() {
             out.count = out.urls.length;
             console.log("[script] 총 미디어 개수:", out.count);
             
-            // 날짜 정보
+            // unix 타임스탬프를 Date 객체로 변환 (1000을 곱해서 밀리초 단위로 변환해야 함)
+            // ex) 1756984811 * 1000
             const baseDate = post.taken_at ? new Date(1000 * post.taken_at) : new Date();
             out.dates = Array.from({ length: out.count }, (_, i) => 
                 localDate(new Date(baseDate.getTime() + (i + 1) * 1000))
             );
             out.tdates = out.dates.map(d => touchDate(d));
+            out.baseDate = timestamp(baseDate);
             
             // 캡션
             const captionText = post.caption ? post.caption.text : '';
@@ -231,5 +239,6 @@ function script() {
         };
     }
 }
+
 
 module.exports = script;
