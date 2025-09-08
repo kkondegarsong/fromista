@@ -16,6 +16,7 @@ const defaultConfig = {
     },
     storage: {
         downloads: path.join(BASE_DIR, 'downloads'),
+        thumbnail: true,
         browser: path.join(BASE_DIR, 'browser-profiles'),
         cookies: path.join(BASE_DIR, 'browser-profiles', 'instagram-cookies.json')
     },
@@ -44,7 +45,7 @@ class Configure {
             return defaultConfig;
         }
     }
-    async setOutput(path) {
+    async output(path) {
         // 디렉토리 생성
         await this.mkdir();
         const update = {
@@ -53,6 +54,31 @@ class Configure {
             }
         }
 
+        await this.mergeStorage(update);
+    }
+    async thumbnail(boolean) {
+        // 디렉토리 생성
+        await this.mkdir();
+        const value = (boolean === 'yes') ? true : false;
+        const update = {
+            storage: {
+                thumbnail: value
+            }
+        }
+
+        await this.mergeStorage(update);
+    }
+
+    async clear() {
+        try {
+            await fs.unlink(this.file);
+            await fs.rm(defaultConfig.storage.browser, { recursive: true, force: true });
+            console.log('configure initialized.');
+        } catch (error) {
+            // 파일이 존재하지 않으면 무시.
+        }
+    }
+    async mergeStorage(update) {
         try {
             // 기존 파일과 병합.
             const content = await fs.readFile(this.file, 'utf8');
@@ -63,16 +89,6 @@ class Configure {
         } catch (error) {
             // 설정 파일이 없으면 새로 생성.
             await this.write(update);
-        }
-
-    }
-    async clear() {
-        try {
-            await fs.unlink(this.file);
-            await fs.rm(defaultConfig.storage.browser, { recursive: true, force: true });
-            console.log('configure initialized.');
-        } catch (error) {
-            // 파일이 존재하지 않으면 무시.
         }
     }
 

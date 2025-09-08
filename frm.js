@@ -33,14 +33,41 @@ program
     .option('-a, --all', 'download all accounts.')
     .option('-o, --output <path>', 'set downloads path.')
     .option('-c, --clear', 'reset all caches and settings.')
+    .option('-t, --thumbnail <boolean>', 'set whether to download the video with its thumbnail')
     .action(async (options) => {
+        let setConfig = false;
+
         if (options.clear) {
             await configure.clear();
             await storage.clear();
+            setConfig = true;
         }
 
         if (options.output) {
-            await configure.setOutput(options.output);
+            await configure.output(options.output);
+            setConfig = true;
+        }
+
+        if (options.thumbnail) {
+            const boolean = options.thumbnail 
+            if (!boolean || typeof boolean !== 'string') {
+                console.error(`thumbnail options must 'yes' or 'no'`);
+                return;
+            }
+
+            const lower = boolean.toLowerCase();
+            if (lower !== 'yes' && lower !== 'no') {
+                console.error(`invalid option: ${boolean}. thumbnail options must 'yes' or 'no'`);
+                return;
+            }
+
+            await configure.thumbnail(lower);
+            setConfig = true;
+        }
+
+        if (setConfig) {
+            console.log('configure completed! retry download.');
+            return;
         }
 
         if (options.all) {

@@ -28,7 +28,7 @@ class Extractor {
 
         try {            
             await this.loadCookies(browser);      
-            const result = await this.runScript(browser, linkUrl);
+            const result = await this.runScript(browser, linkUrl, config);
 
             // 결과 검증 및 후처리
             if (result.error) {
@@ -49,7 +49,7 @@ class Extractor {
         }
     }
 
-    async runScript(browser, linkUrl) {
+    async runScript(browser, linkUrl, config) {
         let page;
         
         try {
@@ -66,8 +66,12 @@ class Extractor {
             });
             
             console.log('extracting media files...');
+            const setting = {
+                thumbnail: config.storage.thumbnail
+            };
+
             // 외부 스크립트 실행
-            const result = await page.evaluate(extractScript);
+            const result = await page.evaluate(extractScript, setting);
             return result;            
         } catch (error) {
             console.error('runScript 오류:', error);

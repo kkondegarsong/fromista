@@ -1,9 +1,10 @@
 // instagram-extract-script.js
 // Instagram 미디어 추출 스크립트 (브라우저에서 실행됨)
 
-function script() {
+function script(setting = { }) {
     try {
         console.log("[script] 시작");
+        const { thumbnail = true } = setting; 
 
         // CPU 성능 체크
         let cpu = 100; // 기본값
@@ -188,12 +189,14 @@ function script() {
             
             // 릴스/TV의 경우 커버 이미지 추가
             if (input.includes('/reel/') || input.includes('/tv/')) {
-                const cover = bestImage(post, true);
-                if (cover) {
-                    out.urls.unshift(cover);
-                    out.urls2.unshift(cover);
-                    out.reels = 1;
-                }
+                if (thumbnail) {
+                    const cover = bestImage(post, true);
+                    if (cover) {
+                        out.urls.unshift(cover);
+                        out.urls2.unshift(cover);
+                        out.reels = 1;
+                    }
+                }                
             }
             
             out.count = out.urls.length;
