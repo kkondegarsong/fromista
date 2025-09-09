@@ -70,7 +70,8 @@ async function getUrls(user) {
         }, user);
 
         let urls = [];
-        for (const item of elementContents) {
+        const elements = elementContents.slice(0, 5);
+        for (const item of elements) {
             if (storage.has(item.href)) {
                 continue;
             }
@@ -78,7 +79,7 @@ async function getUrls(user) {
             urls.push(item.href);
         }
 
-        return urls.slice(0, 5);
+        return urls
     } catch (error) {
         return {
             error: 'check-error',

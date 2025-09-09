@@ -25,12 +25,37 @@ function script(setting = { }) {
         const input = window.location.href.replace(/\?.*/, '');
         console.log("[script] 현재 URL:", input);
         
-        // Instagram API 데이터 찾기
+        let murl = '!';
+        // 메타태그에서 URL 추출 (정규식 사용)
+        if (input.includes('/stories/') || input.includes('/s/')) {
+            let og = document.querySelector('meta[property="og:url"]');
+            if (og) murl = og.content;
+        } else {
+            let al = document.querySelector('meta[property="al:android:url"]');
+            if (al) murl = al.content;
+        }
+
+        if (murl !== '!') {
+            murl = murl
+                    .replace(/\?.*/, '')
+                    .replace(/(instagram\.com\/).+?\/(?=(?:p|tv|reel)\/)/, '$1');
+        }
+
+        console.log("[script] 메타 태그 url:", murl);
+        if (murl.includes('com/stories/') && input.endsWith('.com/')) input = murl;
+        if (murl !== input && !(murl.includes('com/stories/') && input.includes('com/stories/'))) {
+            return { error: '', message: '' };
+        }
+
+        // instagram API 데이터 찾기
         const scripts = document.querySelectorAll('script');
         let jsonData = [];
 
         for (const script of scripts) {
-            if (script.textContent.includes('xdt_api__v1__')) {
+            const match = script.textContent.includes('xdt_api__v1__media__shortcode__web_info') || 
+                            script.textContent.includes('xdt_api__v1__feed__reels_media')
+
+            if (match) {
                 try {
                     // 스크립트 내용을 JSON 객체로 파싱합니다.
                     const parsedObject = JSON.parse(script.textContent);
@@ -48,7 +73,7 @@ function script(setting = { }) {
         if (!jsonData || !jsonData[0]) {
             return {
                 error: 'no_data',
-                message: 'Instagram 데이터를 찾을 수 없습니다',
+                message: 'instagram 데이터를 찾을 수 없습니다',
                 mobile: navigator.userAgent.includes('Mobile'),
                 stories: input.includes('com/stories/')
             };
@@ -124,9 +149,9 @@ function script(setting = { }) {
                 if (r) {
                     // resultData의 키(key)를 반복하며 원하는 데이터가 있는지 확인합니다.
                     console.log("resultData => ", r)
-                    j = r.xdt_api__v1__media__shortcode__web_info || 
-                            (r.xdt_api__v1__feed__reels_media__connection && r.xdt_api__v1__feed__reels_media__connection.edges && r.xdt_api__v1__feed__reels_media__connection.edges[0] && r.xdt_api__v1__feed__reels_media__connection.edges[0].node) ||
-                            (r.xdt_api__v1__feed__reels_media && r.xdt_api__v1__feed__reels_media.reels_media && r.xdt_api__v1__feed__reels_media.reels_media[0]);
+                    j = r.xdt_api__v1__media__shortcode__web_info ??
+                        r.xdt_api__v1__feed__reels_media__connection?.edges?.[0]?.node ??
+                        r.xdt_api__v1__feed__reels_media?.reels_media?.[0];
                 }
             } catch (e) {
                 // 경로 탐색 중 오류가 발생하면 건너뜁니다.
@@ -145,22 +170,16 @@ function script(setting = { }) {
         }
         
         let out = { count: 0 };
-        const urlMatch = input.match(/\/(p|tv|reel)\/([A-Za-z0-9_-]+)/) || input.match(/instagram\.com\/([^\/]+)(?:\/([A-Za-z0-9_-]+))?/);
+        const m = input.match(/\/(p|tv|reel)\/([A-Za-z0-9_-]+)/) || input.match(/instagram\.com\/([^\/]+)(?:\/([A-Za-z0-9_-]+))?/);
         
-        if (!urlMatch) {
+        if (!m) {
             return { error: 'url_parse_failed', message: 'URL 파싱 실패' };
         }
         
-        if (['p', 'tv', 'reel'].includes(urlMatch[1])) {
+        if (['p', 'tv', 'reel'].includes(m[1])) {
             console.log("[script] 게시물 데이터 처리 시작");
             // 게시물 처리
-            out.ispost = 1;
-            out.urls = [];
-            out.urls2 = [];
-            out.dates = [];
-            out.tdates = [];
-            out.vcount = 0;
-            
+            out = { ...out, ispost: 1, urls: [], urls2: [], dates: [], tdates: [], vcount: 0 };            
             const post = j.items && j.items[0];
             if (!post) {
                 return { error: 'no_post_data', message: '게시물 데이터 없음' };
@@ -212,11 +231,78 @@ function script(setting = { }) {
             out.baseDate = timestamp(baseDate);
             
             // 캡션
-            const captionText = post.caption ? post.caption.text : '';
-            out.caption = input + '\n' + 
-                         (out.dates[0] ? out.dates[0].replace(/T(..)(..)(..)/, ' $1:$2:$3  @') : '') + 
-                         out.user + 
-                         (captionText ? '\n' + captionText : '');
+            out.caption = input + '\\n' + 
+                out.dates[0].replace(/T(..)(..)(..)/, ' $1:$2:$3  @') + 
+                out.user + (post.caption ? '\\n' + post.caption.text : '');
+
+        } else if (['stories', 's'].includes(m[1])) {
+            console.log("[script] 스토리 데이터 처리 시작");
+            out = { ...out, urls: [], urls2: [], dates: [], tdates: [], vcount: 0 };
+            out.user = j.user.username;
+            out.count = j.items.length;
+
+
+            let sid = input.match(/\d{5,25}(?=\/?$)/)?.[0] + "_" + j.user.pk;
+            let captions = [];
+
+            j.items.sort((a, b) => a.taken_at - b.taken_at).forEach(a => {
+                const baseDate = a.taken_at ? new Date(1000 * a.taken_at) : new Date();
+                let d = timestamp(baseDate);
+                let td = touchDate(d);
+                let u, u2, u3, fftime;
+                
+                if (a.media_type === 1) {
+                    u2 = bestImage(a);
+                } else {
+                    if (a.story_music_stickers) {
+                        out.count++;
+                        u3 = bestImage(a);
+                        out.urls.push(u3);
+                        out.urls2.push(u3);
+                        out.dates.push(d);
+                        out.tdates.push(td);
+                    }
+                    
+                    let v = a.video_versions;
+                    u2 = bestVideo(v);
+                    out.vcount++;
+                }
+                
+                let cap = a.caption || a.accessibility_caption;
+                let caption;
+                if (cap) {
+                    caption = d.replace(/T(..)(..)(..)/, ' $1:$2:$3  @') + 
+                             out.user + (cap ? '\\n' + cap : '');
+                    captions.push(caption);
+                }
+                
+                out.urls.push(u ?? u2);
+                out.urls2.push(u2);
+                out.dates.push(d);
+                out.tdates.push(td);
+                
+                if (out.count > 1 && a.id === sid) {
+                    if (u3) {
+                        out.one = {
+                            user: out.user, count: 1, vcount: 1, dates: [d, d], 
+                            urls: [u3, u ?? u2], urls2: [u3, u2], 
+                            tdates: [td, td], caption: caption
+                        };
+                    } else {
+                        out.one = {
+                            user: out.user, count: 0, vcount: 1, dates: [d], 
+                            urls: [u ?? u2], urls2: [u2], 
+                            tdates: [td], caption: caption
+                        };
+                    }
+                    
+                    if ((cpu !== -1) && a.video_dash_manifest?.includes('codecs="vp09')) {
+                        out.one.switch = true;
+                    }
+                }
+            });
+            
+            out.caption = captions.join('\\n\\n');
         }
         
         // 결과 검증

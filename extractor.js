@@ -27,7 +27,7 @@ class Extractor {
 
 
         try {            
-            await this.loadCookies(browser);      
+            await this.loadCookies(browser);
             const result = await this.runScript(browser, linkUrl, config);
 
             // 결과 검증 및 후처리

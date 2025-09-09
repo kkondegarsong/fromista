@@ -31,6 +31,7 @@ program
 program
     .option('-u, --user <member>', 'account who want download.')
     .option('-a, --all', 'download all accounts.')
+    .option('-l, --link <url>', 'download from instagram url')
     .option('-o, --output <path>', 'set downloads path.')
     .option('-c, --clear', 'reset all caches and settings.')
     .option('-t, --thumbnail <boolean>', 'set whether to download the video with its thumbnail')
@@ -87,6 +88,8 @@ program
             for (const url of contents) {
                 await download(url);
             }
+        } else if (options.link) {
+            await download(options.link);
         }
     });
 

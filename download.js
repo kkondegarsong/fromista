@@ -46,36 +46,39 @@ async function download(linkUrl) {
             return;
         }
 
-        console.log(`✅ extract success: ${result.user}`);
-        console.log(`photos: ${result.count}, videos: ${result.vcount || 0}`);
-
         try {
             await fs.mkdir(config.storage.downloads, { recursive: true });
         } catch (error) {
             // 디렉토리가 이미 존재하면 무시
         }
 
+        let elements = result;
+        if (!result.ispost && result.one) {
+            elements = result.one;
+        } 
 
-        for (let i = 0; i < result.urls.length; i++) {
+
+        console.log(`✅ extract success: ${elements.user}`);
+        console.log(`photos: ${elements.count}, videos: ${elements.vcount || 0}`);
+
+        for (let i = 0; i < elements.urls.length; i++) {
             try {
-                const urlString = result.urls[i];
+                const urlString = elements.urls[i];
                 const isVideo = urlString.includes('.mp4') || urlString.includes('video');
                 const ext = isVideo ? 'mp4' : 'jpg';
+                const date = (elements.ispost) ? elements.baseDate : elements.dates[i];
 
-                const url = new URL(urlString);
-                const basename = path.basename(url.pathname);
-
-                const filename = `${result.user}_${result.baseDate}_${i+1}.${ext}`;
+                const filename = `${elements.user}_${date}_${i+1}.${ext}`;
                 const filepath = path.join(config.storage.downloads, filename);
                 
                 await downloadFile(urlString, filepath);
                 await storage.save(linkUrl);
                 
-                showProgress(i+1, result.urls.length);
+                showProgress(i+1, elements.urls.length);
                 // 다운로드 간격
                 await new Promise(resolve => setTimeout(resolve, 1000));                
             } catch (error) {
-                console.log(`❌ 다운로드 실패: ${error.message}`);
+                console.log(`failed: ${error.message}\n url: ${elements.urls[i]}`);
             }
         }
 
